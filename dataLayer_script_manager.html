@@ -1,0 +1,137 @@
+<script>
+  {{#if product.id}}
+    window.dataLayer.push({
+      'productId': '{{product.id}}'
+    });
+  {{/if}}
+</script>
+
+<script>
+  {{#if product.id}}
+    window.dataLayer.push({
+      'productPrice': '{{product.price.without_tax.value}}'
+    });
+  {{/if}}
+</script>
+
+<script>
+  {{#if product.id}}
+    window.dataLayer.push({
+      'productName': '{{product.title}}'
+    });
+  {{/if}}
+</script>
+
+<script>
+var cartProducts = [];
+var orderProducts = [];
+var checkoutProducts = [];
+var customerData = {};
+var orderTotal = 0;
+
+var isCart = '{{cart}}' ? true:false;
+var isOrder = '{{order}}' ? true:false;
+var isCustomer = '{{customer}}' ? true:false;
+var isCheckout = window.location.pathname === '/checkout';
+
+
+function addDataToDataLayer(eventName) {
+    window.dataLayer.push({
+        'event': eventName,
+        'cart_products': cartProducts,
+        'order_products': orderProducts,
+        'order_total': orderTotal,
+        'checkout_products': checkoutProducts,
+        'customer': customerData,
+        'isCart': isCart,
+        'isOrder': isOrder,
+        'isCheckout': isCheckout,
+        'isCustomer': isCustomer,
+    });
+}
+
+function requestUserData(eventName) {
+    if (document.querySelectorAll('.customerView > .customerView-body').length) {
+        customerData.email = document.querySelectorAll('.customerView > .customerView-body')[0].textContent;
+    }
+
+    addDataToDataLayer(eventName);
+}
+
+
+{{#if customer}}
+    customerData.id = '{{customer.id}}';
+    customerData.name = '{{customer.name}}';
+    customerData.email = '{{customer.email}}';
+    customerData.phone = '{{customer.phone}}';
+{{/if}}
+
+if (isCheckout) {
+    /* get the current cart contents */
+    const Http = new XMLHttpRequest();
+    const url = '/api/storefront/carts';
+    Http.open("GET", url);
+    Http.send();
+    Http.onreadystatechange = (e) => {
+        if (Http.readyState === 4) {
+            var response = JSON.parse(Http.responseText);
+            var cart = response[0].lineItems.physicalItems;
+            for (var i = 0; i < cart.length; i++) {
+                var product = cart[i];
+                checkoutProducts.push({
+                    'id': product.productId,
+                    'name': product.name,
+                    'sku': product.sku
+                });
+            }
+            addDataToDataLayer('data_layer_ready');
+            addDataToDataLayer('checkout');
+        }
+    }
+    (e) => {
+        console.log(Http.responseText);
+    }
+
+    window.addEventListener("click", function (event) {
+        var id = event.target.id;
+        if (id === 'checkout-customer-continue') {
+            requestUserData('checkout_step_2');
+        }
+        if (id === 'checkout-shipping-continue') {
+            requestUserData('checkout_step_3');
+        }
+        if (id === 'checkout-billing-continue') {
+            requestUserData('checkout_step_4');
+        }
+        if (id === 'checkout-payment-continue') {
+            requestUserData('checkout_step_5');
+        }
+    });
+} else {
+    {{#if cart}}
+        {{#forEach cart.items}}
+            cartProducts.push({
+                'name': '{{name}}',
+                'id': '{{id}}',
+                'sku': '{{sku}}'
+            });
+        {{/forEach}}
+    {{/if}}
+
+    {{#if order}}
+        {{#if order.total}}
+            orderTotal = parseFloat('{{order.total.value}}');
+        {{/if}}
+
+        {{#forEach order.items}}
+            orderProducts.push({
+                'name': '{{name}}',
+                'id': '{{order_product_id}}',
+                'sku': '{{sku}}'
+            });
+        {{/forEach}}
+    {{/if}}
+
+    addDataToDataLayer('data_layer_ready');
+}
+</script>
