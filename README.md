@@ -1,6 +1,9 @@
 # Facebook Conversion API for Bigcommerce
 
 
+## How to set up Facebook conversion API for Bigcommerce
+
+Follow this guide on setting up [FB CAPI for Bigcommerce](https://gtm-server.com/facebook-conversion-api-for-bigcommerce/).
 
 ## Open Source
 
